@@ -2,16 +2,17 @@
 
 # Make the directory 
 
-echo "Make the DBMS directory at $HOME"
+echo "Make the DBMS directory at $PWD"
+echo -e "\n"
 
 
-if mkdir $HOME/DBMS 2>> $HOME/.DBMS_error.log
+if mkdir ./DBMS 2> ./.DBMS_error.log
 then
 	echo "The directory DBMS was made up successfully"
-	echo "The Path is $HOME/DBMS"
+	echo -e "The Path is $PWD/DBMS \n"
 else
 	echo "There is an error while making the directory"
-	echo "this could happen because of you don't have the permission or the directory is already existed"
+	echo -e "this could happen because of you don't have the permission or the directory is already existed \n"
 fi
 
 echo ""
@@ -48,12 +49,12 @@ function createDB {
 
 	read -p "Enter the database name: " DBname
 
-	if mkdir $HOME/DBMS/$DBname 2>> $HOME/.DBMS_error.log
+	if mkdir ./DBMS/$DBname 2>> ./.DBMS_error.log
 	then
-		echo "The database was made up succefully at $HOME/DBMS/$DBname"
+		echo "The database was made up succefully at $PWD/DBMS/$DBname"
 	else
 		echo "There is an error while making the Database"
-		echo "this could happen because of you don't have the permission or the Database is already existed"
+		echo -e "this could happen because of you don't have the permission or the Database is already existed \n"
 	fi
 
 	echo ""
@@ -63,14 +64,13 @@ function createDB {
 
 function listDB {
 
-	echo ""
 
-	if ls -lFh $HOME/DBMS 2>> $HOME/.DBMS_error.log
+	if ls -lFh ./DBMS 2>> ./.DBMS_error.log
 	then
-		echo ""
+		echo -e "\n\n"
 	else 
 		echo "There is an error while listing the databases"
-		echo "this could happen because of you don't have the permission or the directory DBMS isn't existed"
+		echo -e "this could happen because of you don't have the permission or the directory DBMS isn't existed \n"
 	fi
 
 	DBmenu
@@ -81,16 +81,15 @@ function connectDB {
 
 	echo ""
 	read -p "Enter the database name: " DBname
-	if cd $HOME/DBMS/$DBname 2>> $HOME/.DBMS_error.log
+	if cd ./DBMS/$DBname 2>> ./.DBMS_error.log
 	then
 		echo "The connect was made up successfully"
 		pwd
+		TBmenu
 	else
 		echo "There is an error while connecting the database"
-		echo "this could happen because of you don't have the permission or the database isn't existed"
+		echo -e "this could happen because of you don't have the permission or the database isn't existed \n"
 	fi
-
-	DBmenu
 
 }
 
@@ -99,7 +98,7 @@ function dropDB {
 	echo ""
 	read -p "Enter the database name: " DBname
 
-	if ls -d $HOME/DBMS/$DBname 2>> $HOME/.DBMS_error.log
+	if ls -d ./DBMS/$DBname 2>> ./.DBMS_error.log
 
 	then
 		read -p "are you sure you want to remove $DBname database (y/n): " opt
@@ -107,7 +106,7 @@ function dropDB {
 		do
 			if [[ $opt = [Yy] ]]
 			then
-		 		rm -rf $HOME/DBMS/$DBname 2>> $HOME/.DBMS_error.log
+		 		rm -rf ./DBMS/$DBname 2>> ./.DBMS_error.log
 				echo ""
 				echo "The $DBname database was remove successfully"
 				break
@@ -127,4 +126,224 @@ function dropDB {
 }
 
 
+function TBmenu {
+
+	echo ""
+	echo "Please choose an option from 1 to 9"
+	select opt in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table" "Back to Database menu" "exit"
+	do
+		case $REPLY in
+			1) createTB
+				;;
+			2) listTB
+				;;
+			3) dropTB
+				;;
+
+			4) insertTB
+				;;
+			5) selectTB
+				;;
+			6) deleteTB
+				;;
+			7) updateTB
+				;;
+			8) DBmenu
+				;;
+			9) exit 
+				;;
+
+			*) 
+				echo "invalid option please try again"
+				;;
+		esac
+	done
+
+}
+
+
+function createTB {
+
+	echo -e "\n\n"
+
+	read -p "Enter the table name: " TBname
+
+	if [[ -f ./$TBname ]] 
+	then
+		echo "The table is already existed\n\n"
+		TBmenu
+	fi	
+
+	read -p "Enter the number of columns: " TBcolnum
+	echo -e "\n"
+
+	counter=1
+	sep="|"
+	lsep="\n"
+	pkey=""
+	data_type="int"
+	colnames=""
+	metadata=""
+
+	while [ $counter -le $TBcolnum ]
+	do
+		read -p "Enter the name of column $counter: " TBcolname
+
+		echo -e "\n choose the data type for $TBcolname"
+		echo -e "\n choose an option from 1 and 2"
+
+		select choice in "int" "string"
+		do
+			case $REPLY in 
+				1) data_type="int"
+					break
+					;;
+				2) data_type="string"
+					break
+					;;
+				*) echo -e "\n invalid option, please try again."
+					;;
+			esac
+		done
+
+
+		echo -e "\n Do you want to make $TBcolname a primary key"
+		echo -e "\n choose an option from 1 and 2"
+
+		select choice in "yes" "no"
+		do
+			case $REPLY in 
+				1) pkey="PK"
+					break
+					;;
+				2) pkey=""
+					break
+					;;
+				*) echo -e "\n invalid option, please try again."
+					;;
+			esac
+		done
+
+		if [[ $metadata == "" ]] 
+		then
+			metadata=$TBcolname$sep$data_type$sep$pkey
+		else
+			metadata=$metadata$lsep$TBcolname$sep$data_type$sep$pkey
+		fi
+
+		if [[ $colnames == "" ]]
+		then
+			colnames=$TBcolname
+		else
+			colnames=$colnames$sep$TBcolname
+		fi
+
+		let counter=$counter+1
+
+	done
+
+	echo -e $metadata > ./.$TBname
+	echo -e $colnames > ./$TBname
+
+	echo -e "\n\n The Table was be created successfully."
+	TBmenu
+
+}
+
+function insertTB { 
+	
+	echo -e "\n\n"
+
+	read -p "Enter the table name: " TBname
+
+	if ! [[ -f ./$TBname ]] 
+	then
+		echo -e "The table isn't existed\n\n"
+		TBmenu
+	fi	
+
+	sep="|"
+	data=""
+
+	colnums=`cat ./.$TBname | wc -l`
+
+	for (( i=1; i<=$colnums; i++ ))
+	do
+		colname=`awk 'BEGIN{FS="'$sep'"}{if (NR=='$i') print $1}' .$TBname`
+		data_type=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$i') print $2}' .$TBname`
+		pkey=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$i') print $3}' .$TBname`
+
+		read -p "$i. $colname ($data_type): " value
+
+
+		# validate the integer data type
+
+		while [[ $data_type == "int" &&  ! $value =~ ^[0-9]+$ ]]
+		do
+			echo -e "\n invalid data"
+			echo "this field is an integer"
+			echo "enter new value"
+			read -p "$i. $colname ($data_type): " value
+		done
+
+		# Primary key validation
+
+		if [[ $pkey == "PK" ]]
+		then
+			# validate the primary key isn't empty
+
+			while [[ $value == "" ]]
+			do
+				echo -e "\n invalid data"
+				echo "this field is a primary key and can't be empty"
+				echo "enter new value"
+				read -p "$i. $colname ($data_type): " value
+			done
+
+			# validate the primary key isn't repeated
+
+			flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$TBname | grep -Fx $value`
+
+			while [[ $flag != "" ]]
+			do
+				echo -e "\n this data is already existed"
+				echo "this field is a primary key and can't be repeated"
+				echo "enter new value"
+				read -p "$i. $colname ($data_type): " value
+				flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $TBname | grep -Fx $value`
+			done
+
+		fi
+
+		
+		if [[ $data == "" ]]
+		then
+			data=$value
+		else
+			data=$data$sep$value
+		fi
+		
+	done
+
+	echo -e $data >> $TBname
+
+	echo "The data inserted successfully."
+
+	TBmenu
+
+}
+
+function listTB {
+
+	if ls -lFh . 2>> ../.DBMS_error.log
+	then
+		echo -e "\n\n"
+	else 
+		echo "There is an error while listing the tables"
+		echo -e "this could happen because of you don't have the permission or \n"
+	fi
+
+}
+
 DBmenu
+
