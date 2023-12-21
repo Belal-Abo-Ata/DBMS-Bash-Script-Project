@@ -128,3 +128,54 @@ function dropDB {
 
 
 DBmenu
+
+function deleteFromTable {
+	echo -e "Enter Table Name: \c"
+	read Tname
+	echo -e "Enter coulmn Name: \c"
+	read colm
+	fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<NF;i++){if($i=="'$colm'") print i}}}' $Tname)
+	if [[$fld == ""]]
+	then
+		echo "Not FOUND"
+		tableMenu
+	else
+	echo -e "Enter Data to delete: \c"
+	read value
+	val=$(awk 'BEGIN{FS="|"}{if($'$colm'=="'$value'") print $'$fld'}' $Tname 2>>./.error.log)
+	if [[ $val == "" ]]
+	then
+		echo "The Data Not Found"
+		tableMenu
+	else
+		del=$(awk 'BEGIN{FS="|"}{if($'$colm'=="'$value'") print del}' $Tname 2>>./.error.log)
+		sed -i ''$del'd' $Tname 2>>./.error.log
+		echo "Data Deleted Successfully"
+		TableMenu
+	fi
+    fi
+}  
+
+function dropTable{
+	echo -e "Enter Table Name: \c"
+	read Tname
+	rm $Tname .$Tname 2>>./.error.log
+
+	tableMenu
+}
+function selectTabel{
+	echo -e "Enter The Table You To Select From: \C"
+	read Tname
+
+	if [[ -f ${Tname}]];then
+		cat ${Tname}
+	else
+		echo "error displaying table ${Tname}"
+	fi
+tableMenu
+}
+
+
+
+	
+	
