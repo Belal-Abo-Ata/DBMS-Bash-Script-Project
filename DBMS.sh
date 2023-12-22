@@ -301,22 +301,9 @@ function insertTB {
 
 		read -p "$i. $colname ($data_type): " value
 
-
-		# validate the integer data type
-
-		while [[ $data_type == "int" &&  ! $value =~ ^[0-9]+$ ]]
-		do
-			echo -e "\n invalid data"
-			echo "this field is an integer"
-			echo "enter new value"
-			read -p "$i. $colname ($data_type): " value
-		done
-
-		# Primary key validation
-
+		# validate the primary key isn't empty
 		if [[ $pkey == "PK" ]]
 		then
-			# validate the primary key isn't empty
 
 			while [[ $value == "" ]]
 			do
@@ -325,9 +312,26 @@ function insertTB {
 				echo "enter new value"
 				read -p "$i. $colname ($data_type): " value
 			done
+		fi
 
-			# validate the primary key isn't repeated
 
+		# validate the integer data type
+
+		if [[ $value != "" ]]
+		then
+			while [[ $data_type == "int" &&  ! $value =~ ^[0-9]+$ ]]
+			do
+				echo -e "\n invalid data"
+				echo "this field is an integer"
+				echo "enter new value"
+				read -p "$i. $colname ($data_type): " value
+			done
+		fi
+
+
+		# validate the primary key isn't repeated
+		if [[ $pkey == "PK" ]]
+		then
 			flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$TBname | grep -Fx $value`
 
 			while [[ $flag != "" ]]
