@@ -290,6 +290,7 @@ function insertTB {
 
 	sep="|"
 	data=""
+	valid=0
 
 	colnums=`cat ./.$TBname | wc -l`
 
@@ -301,49 +302,65 @@ function insertTB {
 
 		read -p "$i. $colname ($data_type): " value
 
-		# validate the primary key isn't empty
-		if [[ $pkey == "PK" ]]
-		then
+		while [[ $valid == 0 ]]
+		do
+			if [[ $pkey == "PK" ]]
+			then
 
-			while [[ $value == "" ]]
-			do
-				echo -e "\n invalid data"
-				echo "this field is a primary key and can't be empty"
-				echo "enter new value"
-				read -p "$i. $colname ($data_type): " value
-			done
-		fi
+				# validate the primary key isn't empty
+				if [[ $value == "" ]]
+				then
+					echo -e "\n invalid data"
+					echo "this field is a primary key and can't be empty"
+					echo "enter new value"
+					read -p "$i. $colname ($data_type): " value
+					valid=0
+					continue
+				else
+					valid=1
+				fi
+
+				# validate the primary key isn't repeated
+				flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$TBname | grep -Fx $value`
+
+				if [[ $flag != "" ]]
+				then
+					echo -e "\n this data is already existed"
+					echo "this field is a primary key and can't be repeated"
+					echo "enter new value"
+					read -p "$i. $colname ($data_type): " value
+					flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $TBname | grep -Fx $value`
+					valid=0
+					continue
+				else
+					valid=1
+				fi
+
+			fi
 
 
-		# validate the integer data type
+			# validate the integer data type
 
-		if [[ $value != "" ]]
-		then
-			while [[ $data_type == "int" &&  ! $value =~ ^[0-9]+$ ]]
-			do
-				echo -e "\n invalid data"
-				echo "this field is an integer"
-				echo "enter new value"
-				read -p "$i. $colname ($data_type): " value
-			done
-		fi
+			if [[ $value != "" ]]
+			then
+				if [[ $data_type == "int" &&  ! $value =~ ^[0-9]+$ ]]
+				then
+					echo -e "\n invalid data"
+					echo "this field is an integer"
+					echo "enter new value"
+					read -p "$i. $colname ($data_type): " value
+					valid=0
+					continue
+				else
+					valid=1
+				fi
+			else
+				valid=1
+			fi
+		done
 
 
-		# validate the primary key isn't repeated
-		if [[ $pkey == "PK" ]]
-		then
-			flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$TBname | grep -Fx $value`
-
-			while [[ $flag != "" ]]
-			do
-				echo -e "\n this data is already existed"
-				echo "this field is a primary key and can't be repeated"
-				echo "enter new value"
-				read -p "$i. $colname ($data_type): " value
-				flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $TBname | grep -Fx $value`
-			done
-
-		fi
+	
 
 		
 		if [[ $data == "" ]]
