@@ -412,6 +412,7 @@ function updateTB {
 		  colname=`awk 'BEGIN{FS="'$sep'"}{if (NR=='$fld') print $1}' .$Tname`
 		  data_type=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$fld') print $2}' .$Tname`
 		  pkey=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$fld') print $3}' .$Tname`
+		  sep="|"
 
 
 		  echo -e "Enter Value in $colname ($data_type:$pkey): \c"
@@ -422,50 +423,71 @@ function updateTB {
 			  echo "Value Not Found"
 		  else
 				  echo -e "Enter new Value to set in $colname ($data_type:$pkey): \c"
-				  read newValue
-				  # validate the integer data type
+				  read newvalue
+				  valid=0
 
-				  while [[ $data_type == "int" &&  ! $newvalue =~ ^[0-9]+$ ]]
+				  while [[ $valid == 0 ]]
 				  do
-					  echo -e "\n invalid data"
-					  echo "this field is an integer"
-					  echo "enter new value"
-					  read -p "$i. $colname ($data_type): " value
-				  done
+					  if [[ $pkey == "PK" ]]
+					  then
 
-				  # Primary key validation
+						  # validate the primary key isn't empty
+						  if [[ $newvalue == "" ]]
+						  then
+							  echo -e "\n invalid data"
+							  echo "this field is a primary key and can't be empty"
+							  echo "enter new newvalue"
+							  read -p "$colname ($data_type): " newvalue
+							  valid=0
+							  continue
+						  else
+							  valid=1
+						  fi
 
-				  if [[ $pkey == "PK" ]]
-				  then
-					  # validate the primary key isn't empty
+						  # validate the primary key isn't repeated
+						  flag=`awk 'BEGIN{FS="'$sep'"} {print $'$fld'}' ./$Tname | grep -Fx $newvalue`
 
-					  while [[ $newvalue == "" ]]
-					  do
-						  echo -e "\n invalid data"
-						  echo "this field is a primary key and can't be empty"
-						  echo "enter new value"
-						  read -p "$i. $colname ($data_type): " newvalue
-					  done
+						  if [[ $flag != "" ]]
+						  then
+							  echo -e "\n this data is already existed"
+							  echo "this field is a primary key and can't be repeated"
+							  echo "enter new newvalue"
+							  read -p "$colname ($data_type): " newvalue
+							  flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $Tname | grep -Fx $newvalue`
+							  valid=0
+							  continue
+						  else
+							  valid=1
+						  fi
 
-					  # validate the primary key isn't repeated
-
-					  flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$Tname | grep -Fx $value`
-
-					  while [[ $flag != "" ]]
-					  do
-						  echo -e "\n this data is already existed"
-						  echo "this field is a primary key and can't be repeated"
-						  echo "enter new value"
-						  read -p "$i. $colname ($data_type): " value
-						  flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $Tname | grep -Fx $value`
-					  done
-
-				  fi
+					  fi
 
 
+					  # validate the integer data type
+
+					  if [[ $newvalue != "" ]]
+					  then
+						  if [[ $data_type == "int" &&  ! $newvalue =~ ^[0-9]+$ ]]
+						  then
+							  echo -e "\n invalid data"
+							  echo "this field is an integer"
+							  echo "enter new newvalue"
+							  read -p "$colname ($data_type): " newvalue
+					valid=0
+					continue
+				else
+					valid=1
+				fi
+			else
+				valid=1
+			fi
+		done
+
+
+				  
 				  NR=$(awk 'BEGIN{FS="|"}{if ($'$fld' == "'$val'") print NR}' $Tname)
-				  oldValue=$(awk 'BEGIN{FS="|"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$fld') print $i}}}' $Tname)
-				  sed -i ''$NR's/'$oldValue'/'$newValue'/g' $Tname
+				  oldvalue=$(awk 'BEGIN{FS="|"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$fld') print $i}}}' $Tname)
+				  sed -i ''$NR's/'$oldvalue'/'$newvalue'/g' $Tname
 				  echo_adv "Row Updated Successfully"
 			  fi
 		  fi
@@ -479,26 +501,32 @@ function updateTB {
 function deleteTB { 
 	echo -e "Enter Table Name: \c"
 	read Tname
-	echo -e "Enter coulmn Name: \c"
-	read colm
-	fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<NF;i++){if($i=="'$colm'") print i}}}' $Tname)
-	if [[ $fld == "" ]]
+	if [[ -f $Tname ]]
 	then
-		echo "Not FOUND"
-		TBmenu
+		echo -e "Enter coulmn Name: \c"
+		read colm
+		fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<NF;i++){if($i=="'$colm'") print i}}}' $Tname)
+		if [[ $fld == "" ]]
+		then
+			echo "Not FOUND"
+			TBmenu
+		else
+			echo -e "Enter Data to delete: \c"
+			read value
+			val=$(awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col==val) print $col }' $Tname)
+			if [[ $val == "" ]]
+			then
+				echo "The Data Not Found"
+			else
+				awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col!= val) print $0}' $Tname > temp_file       
+				mv temp_file $Tname                    
+				echo_adv "Data Deleted Successfully"
+			fi
+		fi
+
 	else
-	echo -e "Enter Data to delete: \c"
-	read value
-	val=$(awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col==val) print $col }' $Tname)
-	if [[ $val == "" ]]
-	then
-		echo "The Data Not Found"
-	else
-		awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col!= val) print $0}' $Tname > temp_file       
-		mv temp_file $Tname                    
-		echo_adv "Data Deleted Successfully"
+		echo_adv "The Table isn't exist"
 	fi
-    fi
 
     TBmenu
 }  
@@ -506,7 +534,7 @@ function deleteTB {
 function dropTB {
 	echo -e "Enter Table Name: \c"
 	read Tname
-	if rm $Tname .$Tname 2 > ../.error.log
+	if rm $Tname .$Tname 2> ../.error.log
 	then
 		echo_adv "The Table was dropped successfully"
 	else
@@ -533,11 +561,7 @@ function selectTB {
 			if [[ $row != "" ]]
 			then
 				let row=$row+1
-				#awk -v cond="$row" ' BEGIN { FS = "|" } { if(cond != "" && $0 !~ cond)
-				#next;
-				#print
-				#}' "$Tname"
-				awk 'BEGIN { FS = "|" } { if (NR=='$row') print "'$0'\n" }' $Tname
+				awk 'BEGIN { FS = "|" } { if (NR=='$row') print $0 }' $Tname
 			else 
 				echo_adv "`cat $Tname`"
 			fi
