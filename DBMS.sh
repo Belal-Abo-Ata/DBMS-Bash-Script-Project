@@ -1,23 +1,51 @@
 #!/bin/bash
 
+PS3="Enter a Choice: "
+
+### Better echo message ###
+function echo_adv {
+	echo -e "\n"
+	echo "-----------------------------------------------------------------------------------------------------------------"
+	echo -e "\n$1\n"
+	echo "-----------------------------------------------------------------------------------------------------------------"
+	echo -e "\n"
+}
+
+### Log all errors in ./.DBMS_error.log file ###
+
+function error_log {
+	data="\n"
+	data+="-----------------------------------------------------------------------------------------------------------------\n"
+	data+=`date`
+	data+="\nUser=$USER\n"
+	data+="Error:\n"
+	data+=`cat $1`
+	data+="\n-----------------------------------------------------------------------------------------------------------------"
+	data+="\n"
+	echo -e $data >> ./.DBMS_error.log
+}
+
+echo -e "\nThis program was made by Belal Abo Ata and Yousef Alsayed\n"
+
+echo_adv "Welcome To Simple DBMS"
+
+
 # Make the directory 
 
-echo "Make the DBMS directory at $PWD"
-echo -e "\n"
+echo "Making the DBMS directory at $PWD"
 
 
-if mkdir ./DBMS 2> ./.DBMS_error.log
+if mkdir ./DBMS 2> ./.error.log
 then
+
 	echo "The directory DBMS was made up successfully"
 	echo -e "The Path is $PWD/DBMS \n"
 else
-	echo "There is an error while making the directory"
-	echo -e "this could happen because of you don't have the permission or the directory is already existed \n"
+	cat ./.error.log
+	error_log ./.error.log
 fi
 
-echo ""
 
-PS3="Enter a Choice: "
 
 function DBmenu {
 
@@ -49,15 +77,13 @@ function createDB {
 
 	read -p "Enter the database name: " DBname
 
-	if mkdir ./DBMS/$DBname 2>> ./.DBMS_error.log
+	if mkdir ./DBMS/$DBname 2> ./.error.log
 	then
-		echo "The database was made up succefully at $PWD/DBMS/$DBname"
+		echo_adv "The database was made up succefully at $PWD/DBMS/$DBname"
 	else
-		echo "There is an error while making the Database"
-		echo -e "this could happen because of you don't have the permission or the Database is already existed \n"
+		cat ./.error.log
+		error_log ./.error.log	
 	fi
-
-	echo ""
 
 	DBmenu
 }
@@ -65,12 +91,12 @@ function createDB {
 function listDB {
 
 
-	if ls -lFh ./DBMS 2>> ./.DBMS_error.log
+	if ls ./DBMS 2> ./.error.log
 	then
-		echo -e "\n\n"
+		echo -e "\n"
 	else 
-		echo "There is an error while listing the databases"
-		echo -e "this could happen because of you don't have the permission or the directory DBMS isn't existed \n"
+			cat ./.error.log
+			error_log ./.error.log
 	fi
 
 	DBmenu
@@ -79,28 +105,28 @@ function listDB {
 
 function connectDB {
 
-	echo ""
 	read -p "Enter the database name: " DBname
-	if cd ./DBMS/$DBname 2>> ./.DBMS_error.log
+	if cd ./DBMS/$DBname 2> ./.error.log
 	then
-		echo "The connect was made up successfully"
+		echo_adv "The connect was made up successfully"
 		pwd
 		TBmenu
 	else
-		echo "There is an error while connecting the database"
-		echo -e "this could happen because of you don't have the permission or the database isn't existed \n"
+		cat ./.error.log
+		error_log ./.error.log	
+		DBmenu
 	fi
 
 }
 
 function dropDB {
 
-	echo ""
+	echo -e "\n"
 	read -p "Enter the database name: " DBname
 
-	if ls -d ./DBMS/$DBname 2>> ./.DBMS_error.log
-
+	if ls -d ./DBMS/$DBname 2> ./.error.log
 	then
+		echo -e "\n"
 		read -p "are you sure you want to remove $DBname database (y/n): " opt
 		while true 
 		do
@@ -118,7 +144,8 @@ function dropDB {
 			fi
 		done
 	else
-		echo "The database isn't existed"
+		cat ./.error.log
+		error_log ./.error.log	
 	fi
 
 	DBmenu
@@ -128,7 +155,7 @@ function dropDB {
 
 function TBmenu {
 
-	echo ""
+	echo -e "\n"
 	echo "Please choose an option from 1 to 9"
 	select opt in "Create Table" "List Tables" "Drop Table" "Insert into Table" "Select From Table" "Delete From Table" "Update Table" "Back to Database menu" "exit"
 	do
@@ -141,7 +168,7 @@ function TBmenu {
 				;;
 			4) insertTB
 				;;
-			5) selectColumnFromTabel
+			5) selectTB
 				;;
 			6) deleteTB
 				;;
@@ -163,18 +190,18 @@ function TBmenu {
 
 function createTB {
 
-	echo -e "\n\n"
+	echo -e "\n"
 
 	read -p "Enter the table name: " TBname
 
 	if [[ -f ./$TBname ]] 
 	then
-		echo "The table is already existed\n\n"
+		echo_adv "The table is already existed"
 		TBmenu
 	fi	
 
-	read -p "Enter the number of columns: " TBcolnum
 	echo -e "\n"
+	read -p "Enter the number of columns: " TBcolnum
 
 	counter=1
 	sep="|"
@@ -186,10 +213,10 @@ function createTB {
 
 	while [ $counter -le $TBcolnum ]
 	do
+		echo -e "\n"
 		read -p "Enter the name of column $counter: " TBcolname
-
-		echo -e "\n choose the data type for $TBcolname"
-		echo -e "\n choose an option from 1 and 2"
+		echo "choose the data type for $TBcolname"
+		echo "choose an option from 1 and 2"
 
 		select choice in "int" "string"
 		do
@@ -207,7 +234,7 @@ function createTB {
 
 
 		echo -e "\n Do you want to make $TBcolname a primary key"
-		echo -e "\n choose an option from 1 and 2"
+		echo -e "choose an option from 1 and 2"
 
 		select choice in "yes" "no"
 		do
@@ -218,7 +245,7 @@ function createTB {
 				2) pkey=""
 					break
 					;;
-				*) echo -e "\n invalid option, please try again."
+				*) echo -e "invalid option, please try again."
 					;;
 			esac
 		done
@@ -244,20 +271,20 @@ function createTB {
 	echo -e $metadata > ./.$TBname
 	echo -e $colnames > ./$TBname
 
-	echo -e "\n\n The Table was be created successfully."
+	echo_adv "The Table was be created successfully."
 	TBmenu
 
 }
 
 function insertTB { 
 	
-	echo -e "\n\n"
+	echo -e "\n"
 
 	read -p "Enter the table name: " TBname
 
 	if ! [[ -f ./$TBname ]] 
 	then
-		echo -e "The table isn't existed\n\n"
+		echo_adv "The table isn't existed"
 		TBmenu
 	fi	
 
@@ -334,55 +361,99 @@ function insertTB {
 
 function listTB {
 
-	if ls -lFh . 2>> ../.DBMS_error.log
+	if ls . 2> ../.error.log
 	then
-		echo -e "\n\n"
+		echo -e "\n"
 	else 
-		echo "There is an error while listing the tables"
-		echo -e "this could happen because of you don't have the permission or \n"
+		cat ./.error.log
+		error_log ./.error.log
+
 	fi
 
+	TBmenu
 }
 
 function updateTB {
+
+  sep="|"
   echo -e "Enter Table Name: \c"
   read Tname
-  echo -e "Enter Column name: \c"
-  read colm
-  fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$colm'") print i}}}' $Tname)
-  if [[ $fld == "" ]]
+  if [[ -f $Tname ]]
   then
-    echo "Not Found"
-    TBmenu
-  else
-    echo -e "Enter Value: \c"
-    read val
-    res=$(awk 'BEGIN{FS="|"}{if ($'$fld'=="'$val'") print $'$fld'}' $Tname 2>>./.error.log)
-    if [[ $res == "" ]]
-    then
-      echo "Value Not Found"
-      TBmenu
-    else
-      echo -e "Enter column name to set: \c"
-      read setcolm
-      setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setcolm'") print i}}}' $Tname)
-      if [[ $setFid == "" ]]
-      then
-        echo "Not Found"
-        TBmenu
-      else
-        echo -e "Enter new Value to set: \c"
-        read newValue
-        NR=$(awk 'BEGIN{FS="|"}{if ($'$fld' == "'$val'") print NR}' $Tname 2>>./.error.log)
-        oldValue=$(awk 'BEGIN{FS="|"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' $Tname 2>>./.error.log)
-        echo $oldValue
-        sed -i ''$NR's/'$oldValue'/'$newValue'/g' $Tname 2>>./.error.log
-        echo "Row Updated Successfully"
-        TBmenu
-      fi
-    fi
-  fi
-}
+	  echo -e "Enter Column name: \c"
+	  read colm
+	  fld=$(awk 'BEGIN{FS="'$sep'"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$colm'") print i}}}' $Tname)
+
+	  if [[ $fld == "" ]]
+	  then
+		  echo "Not Found"
+	  else
+		  colname=`awk 'BEGIN{FS="'$sep'"}{if (NR=='$fld') print $1}' .$Tname`
+		  data_type=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$fld') print $2}' .$Tname`
+		  pkey=`awk 'BEGIN{FS="'$sep'"} {if (NR=='$fld') print $3}' .$Tname`
+
+
+		  echo -e "Enter Value in $colname ($data_type:$pkey): \c"
+		  read val
+		  res=$(awk 'BEGIN{FS="|"}{if ($'$fld'=="'$val'") print $'$fld'}' $Tname)
+		  if [[ $res == "" ]]
+		  then
+			  echo "Value Not Found"
+		  else
+				  echo -e "Enter new Value to set in $colname ($data_type:$pkey): \c"
+				  read newValue
+				  # validate the integer data type
+
+				  while [[ $data_type == "int" &&  ! $newvalue =~ ^[0-9]+$ ]]
+				  do
+					  echo -e "\n invalid data"
+					  echo "this field is an integer"
+					  echo "enter new value"
+					  read -p "$i. $colname ($data_type): " value
+				  done
+
+				  # Primary key validation
+
+				  if [[ $pkey == "PK" ]]
+				  then
+					  # validate the primary key isn't empty
+
+					  while [[ $newvalue == "" ]]
+					  do
+						  echo -e "\n invalid data"
+						  echo "this field is a primary key and can't be empty"
+						  echo "enter new value"
+						  read -p "$i. $colname ($data_type): " newvalue
+					  done
+
+					  # validate the primary key isn't repeated
+
+					  flag=`awk 'BEGIN{FS="'$sep'"} {print $'$i'}' ./$Tname | grep -Fx $value`
+
+					  while [[ $flag != "" ]]
+					  do
+						  echo -e "\n this data is already existed"
+						  echo "this field is a primary key and can't be repeated"
+						  echo "enter new value"
+						  read -p "$i. $colname ($data_type): " value
+						  flag=`awk 'BEGIN{FS="'$sep'"} {print '$i'}' $Tname | grep -Fx $value`
+					  done
+
+				  fi
+
+
+				  NR=$(awk 'BEGIN{FS="|"}{if ($'$fld' == "'$val'") print NR}' $Tname)
+				  oldValue=$(awk 'BEGIN{FS="|"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$fld') print $i}}}' $Tname)
+				  sed -i ''$NR's/'$oldValue'/'$newValue'/g' $Tname
+				  echo_adv "Row Updated Successfully"
+			  fi
+		  fi
+	  else
+		  echo_adv "Table isn't exist"
+	  fi
+
+	  TBmenu
+  }
 
 function deleteTB { 
 	echo -e "Enter Table Name: \c"
@@ -401,39 +472,61 @@ function deleteTB {
 	if [[ $val == "" ]]
 	then
 		echo "The Data Not Found"
-		TBmenu
 	else
 		awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col!= val) print $0}' $Tname > temp_file       
 		mv temp_file $Tname                    
-		echo "Data Deleted Successfully"
-		TBmenu   
+		echo_adv "Data Deleted Successfully"
 	fi
     fi
+
+    TBmenu
 }  
 
 function dropTB {
 	echo -e "Enter Table Name: \c"
 	read Tname
-	rm $Tname .$Tname 2>>./.error.log
+	if rm $Tname .$Tname 2 > ../.error.log
+	then
+		echo_adv "The Table was dropped successfully"
+	else
+		cat ../.error.log
+		error_log ../.error.log
+	fi
 
 	TBmenu
-   }
+}
 
-function selectColumnFromTabel {
-	
+function selectTB {
+
 	echo -e "Enter the table name: \c"
-        read Tname
+	read Tname
 	if [ -e "$Tname" ];then 
-	echo -e "Enter raw you want select: \c"
+		rowsnum=`cat ./$Tname | wc -l`
+		let rowsnum=$rowsnum-1
+		echo "Number of Rows in This Table is $rowsnum"
+		if [[ $rowsnum > 0 ]]
+		then
+			echo -e "if you don't write any number the whole table will be shown"
+			echo -e "Enter raw you want select from 1 to $rowsnum: \c"
+			read row
+			if [[ $row != "" ]]
+			then
+				let row=$row+1
+				#awk -v cond="$row" ' BEGIN { FS = "|" } { if(cond != "" && $0 !~ cond)
+				#next;
+				#print
+				#}' "$Tname"
+				awk 'BEGIN { FS = "|" } { if (NR=='$row') print "'$0'\n" }' $Tname
+			else 
+				echo_adv "`cat $Tname`"
+			fi
+		else 
+			echo_adv "There isn't data in this table"
+		fi
+   	else
+	   echo_adv "Table $Tname not found"
+   	fi	
 
-        read row
-	awk -v cond="$row" ' BEGIN { FS = "|" } { if(cond != "" && $0 !~ cond)
-	next;
-	print
-}' "$Tname"
-else
-	echo "Table $Tname not found"
-	    
-fi	
+	TBmenu
 }
 DBmenu
