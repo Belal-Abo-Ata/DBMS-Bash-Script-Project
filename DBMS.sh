@@ -139,10 +139,9 @@ function TBmenu {
 				;;
 			3) dropTB
 				;;
-
 			4) insertTB
 				;;
-			5) selectTB
+			5) selectColumnFromTabel
 				;;
 			6) deleteTB
 				;;
@@ -345,51 +344,96 @@ function listTB {
 
 }
 
-DBmenu
+function updateTB {
+  echo -e "Enter Table Name: \c"
+  read Tname
+  echo -e "Enter Column name: \c"
+  read colm
+  fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$colm'") print i}}}' $Tname)
+  if [[ $fld == "" ]]
+  then
+    echo "Not Found"
+    TBmenu
+  else
+    echo -e "Enter Value: \c"
+    read val
+    res=$(awk 'BEGIN{FS="|"}{if ($'$fld'=="'$val'") print $'$fld'}' $Tname 2>>./.error.log)
+    if [[ $res == "" ]]
+    then
+      echo "Value Not Found"
+      TBmenu
+    else
+      echo -e "Enter column name to set: \c"
+      read setcolm
+      setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setcolm'") print i}}}' $Tname)
+      if [[ $setFid == "" ]]
+      then
+        echo "Not Found"
+        TBmenu
+      else
+        echo -e "Enter new Value to set: \c"
+        read newValue
+        NR=$(awk 'BEGIN{FS="|"}{if ($'$fld' == "'$val'") print NR}' $Tname 2>>./.error.log)
+        oldValue=$(awk 'BEGIN{FS="|"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' $Tname 2>>./.error.log)
+        echo $oldValue
+        sed -i ''$NR's/'$oldValue'/'$newValue'/g' $Tname 2>>./.error.log
+        echo "Row Updated Successfully"
+        TBmenu
+      fi
+    fi
+  fi
+}
 
-function deleteFromTable {
+function deleteTB { 
 	echo -e "Enter Table Name: \c"
 	read Tname
 	echo -e "Enter coulmn Name: \c"
 	read colm
 	fld=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<NF;i++){if($i=="'$colm'") print i}}}' $Tname)
-	if [[$fld == ""]]
+	if [[ $fld == "" ]]
 	then
 		echo "Not FOUND"
-		tableMenu
+		TBmenu
 	else
 	echo -e "Enter Data to delete: \c"
 	read value
-	val=$(awk 'BEGIN{FS="|"}{if($'$colm'=="'$value'") print $'$fld'}' $Tname 2>>./.error.log)
+	val=$(awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col==val) print $col }' $Tname)
 	if [[ $val == "" ]]
 	then
 		echo "The Data Not Found"
-		tableMenu
+		TBmenu
 	else
-		del=$(awk 'BEGIN{FS="|"}{if($'$colm'=="'$value'") print del}' $Tname 2>>./.error.log)
-		sed -i ''$del'd' $Tname 2>>./.error.log
+		awk -v col=$fld -v val="$value" 'BEGIN{FS="|"}{if($col!= val) print $0}' $Tname > temp_file       
+		mv temp_file $Tname                    
 		echo "Data Deleted Successfully"
-		TableMenu
+		TBmenu   
 	fi
     fi
 }  
 
-function dropTable{
+function dropTB {
 	echo -e "Enter Table Name: \c"
 	read Tname
 	rm $Tname .$Tname 2>>./.error.log
 
-	tableMenu
-}
-function selectTabel{
-	echo -e "Enter The Table You To Select From: \C"
-	read Tname
+	TBmenu
+   }
 
-	if [[ -f ${Tname}]];then
-		cat ${Tname}
-	else
-		echo "error displaying table ${Tname}"
-	fi
-tableMenu
-}
+function selectColumnFromTabel {
+	
+	echo -e "Enter the table name: \c"
+        read Tname
+	if [ -e "$Tname" ];then 
+	echo -e "Enter raw you want select: \c"
 
+        read row
+	awk -v cond="$row" ' BEGIN { FS = "|" } { if(cond != "" && $0 !~ cond)
+	next;
+	print
+}' "$Tname"
+else
+	echo "Table $Tname not found"
+	    
+fi	
+}
+DBmenu
